@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    // 2. Entity Validations
+    function isValidUserProfile(data) {
+      return data.uid == request.auth.uid 
+        && data.email == request.auth.token.email
+        && (data.get('displayName', '') is string && data.get('displayName', '').size() <= 200)
+        && (data.get('currentRole', '') is string && data.get('currentRole', '').size() <= 200)
+        && (data.get('experienceYears', 0) is number);
+    }
+
+    function isValidGoal(data, userId) {
+      return data.userId == userId
+        && data.title is string && data.title.size() <= 200
+        && data.status in ['Not Started', 'In Progress', 'Completed', 'On Hold']
+        && (data.get('type', 'Skill') in ['Skill', 'Network', 'Project', 'Promotion']);
+    }
+
+    function isValidSkill(data, userId) {
+      return data.userId == userId
+        && data.skillName is string && data.skillName.size() <= 100
+        && data.level is number && data.level >= 1 && data.level <= 5;
+    }
+
+    function isValidSession(data, userId) {
+      return data.userId == userId
+        && data.title is string && data.title.size() <= 200
+        && data.messages is list && data.messages.size() > 0;
+    }
+
+    // --- Matches ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(incoming()) 
+                     && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidUserProfile(incoming()) 
+                     && incoming().uid == existing().uid
+                     && incoming().email == existing().email
+                     && incoming().updatedAt == request.time;
+    }
+
+    match /users/{userId}/goals/{goalId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidGoal(incoming(), userId)
+                     && isValidId(goalId)
+                     && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidGoal(incoming(), userId)
+                     && incoming().userId == existing().userId
+                     && incoming().updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/skills/{skillId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSkill(incoming(), userId)
+                     && isValidId(skillId);
+      allow update: if isOwner(userId) && isValidSkill(incoming(), userId)
+                     && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/sessions/{sessionId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(sessionId) && isValidSession(incoming(), userId)
+                     && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidSession(incoming(), userId)
+                     && incoming().updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Professional profile including current status and aspirations",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "currentRole": { "type": "string" },
+        "targetRole": { "type": "string" },
+        "industry": { "type": "string" },
+        "experienceYears": { "type": "number" },
+        "focusAreas": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Goal": {
+      "title": "Career Goal",
+      "description": "SMART goal for professional development",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Skill", "Network", "Project", "Promotion"] },
+        "status": { "type": "string", "enum": ["Not Started", "In Progress", "Completed", "On Hold"] },
+        "targetDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "status"]
+    },
+    "SkillAssessment": {
+      "title": "Skill Assessment",
+      "description": "Self-assessment or coach-evaluated skill levels",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "skillName": { "type": "string" },
+        "category": { "type": "string" },
+        "level": { "type": "number", "description": "1 to 5" },
+        "notes": { "type": "string" },
+        "lastEvaluated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "skillName", "level"]
+    },
+    "CoachSession": {
+      "title": "Coach Session",
+      "description": "A saved coaching conversation history",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "messages": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "parts": { 
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": { "type": "string" }
+                  }
+                }
+              }
+            }
+          } 
+        },
+        "toolName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "messages", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile data"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Career goals for the user"
+    },
+    "/users/{userId}/skills/{skillId}": {
+      "schema": "SkillAssessment",
+      "description": "Skill assessments for the user"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "CoachSession",
+      "description": "Saved coaching sessions and conversation history"
+    }
+  }
+}

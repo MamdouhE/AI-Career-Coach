@@ -1,0 +1,6 @@
+{
+  "name": "Ascend: Elite AI Career Coach",
+  "description": "Democratizing personalized career coaching, skill assessments, and professional development plans for all professionals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
